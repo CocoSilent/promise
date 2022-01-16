@@ -1,7 +1,7 @@
 import {Executor, OnFulfilled, OnRejected, PromiseState} from './type';
 
 // 异步任务，nodejs微任务  浏览器宏任务
-const asyncTask = (fun: any) => {
+function asyncTask(fun: any) {
     if (process && process.nextTick) {
         // microtask
         process.nextTick(fun)
@@ -11,13 +11,66 @@ const asyncTask = (fun: any) => {
     }
 }
 
+function resolvePromise(promise2: Promise, x: any, resolve: OnFulfilled, reject: OnRejected) {
+    if (promise2 === x) {
+        throw new TypeError('x不能等于promise2')
+    } else if (x instanceof Promise) {
+        if (x.PromiseState === PromiseState.PENDING) {
+            x.then((y) => {
+                resolvePromise(promise2, y, resolve, reject)
+            }, reject)
+        } else {
+            x.then(resolve, reject);
+        }
+    } else if (x !== null && (typeof x === "object" || typeof x === 'function')) {
+        let then;
+        try {
+            then = x.then;
+        } catch (e) {
+            reject(e);
+            return;
+        }
+        if (typeof then === 'function') {
+            let called = false;
+            try {
+                then.call(x,
+                    (y: any) => {
+                        if (called) {
+                            return
+                        }
+                        called = true;
+                        resolvePromise(promise2, y, resolve, reject);
+                    },
+                    (r: any) => {
+                        if (called) {
+                            return
+                        }
+                        called = true;
+                        reject(r);
+                    })
+            } catch (e) {
+                if (called) {
+                    return;
+                }
+                called = true;
+                reject(e);
+            }
+        } else {
+            resolve(x);
+        }
+    } else {
+        resolve(x);
+    }
+}
+
 export default class Promise {
-    private PromiseState: PromiseState;
+    PromiseState: PromiseState;
     private PromiseResult: any;
     private readonly resolve: OnFulfilled
     private readonly reject: OnRejected;
-    private readonly onFulfilledCallbacks:OnFulfilled[]  = [];
-    private readonly onRejectedCallbacks:OnRejected[] = [];
+    private readonly onFulfilledCallbacks: OnFulfilled[] = [];
+    private readonly onRejectedCallbacks: OnRejected[] = [];
+
     constructor(executor: Executor) {
         this.PromiseState = PromiseState.PENDING;
 
@@ -49,13 +102,22 @@ export default class Promise {
             this.reject(e);
         }
     }
-    then(onFulfilled: OnFulfilled, onRejected:OnRejected) {
+
+    then(onFulfilled: OnFulfilled, onRejected: OnRejected) {
+        if (typeof onFulfilled !== 'function') {
+            onFulfilled = value => value;
+        }
+        if (typeof onRejected !== 'function') {
+            onRejected = reason => {
+                throw reason
+            };
+        }
         const promise2 = new Promise((resolve, reject) => {
             if (this.PromiseState === PromiseState.FULLFILLED) {
                 asyncTask(() => {
                     try {
                         const x = onFulfilled(this.PromiseResult);
-                        resolve(x);
+                        resolvePromise(promise2, x, resolve, reject);
                     } catch (e) {
                         reject(e);
                     }
@@ -64,7 +126,7 @@ export default class Promise {
                 asyncTask(() => {
                     try {
                         const x = onRejected(this.PromiseResult);
-                        resolve(x);
+                        resolvePromise(promise2, x, resolve, reject);
                     } catch (e) {
                         reject(e);
                     }
