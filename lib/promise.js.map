@@ -1,0 +1,1 @@
+{"version":3,"file":"promise.js","sources":["../src/promise.ts"],"sourcesContent":["export default class Promise {\r\n\r\n}"],"names":[],"mappings":";;;;;;;KAAA;MAEC;KAAD,cAAC;CAAD,CAAC;;;;;;;;"}
