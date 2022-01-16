@@ -134,13 +134,23 @@ export default class Promise {
             } else if (this.PromiseState === PromiseState.PENDING) {
                 this.onFulfilledCallbacks.push((value) => {
                     asyncTask(() => {
-                        onFulfilled(value);
+                        try {
+                            const x = onFulfilled(value);
+                            resolvePromise(promise2, x, resolve, reject);
+                        } catch (e) {
+                            reject(e);
+                        }
                     })
                 });
 
                 this.onRejectedCallbacks.push((reason) => {
                     asyncTask(() => {
-                        onFulfilled(reason);
+                        try {
+                            const x = onRejected(reason);
+                            resolvePromise(promise2, x, resolve, reject);
+                        } catch (e) {
+                            reject(e);
+                        }
                     })
                 })
             }
