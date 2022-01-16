@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/CocoSilent/promise#readme",
   "devDependencies": {
+    "@types/node": "^17.0.8",
     "rollup": "^2.64.0",
     "rollup-plugin-typescript": "^1.0.1",
     "tslint": "^6.1.3",
