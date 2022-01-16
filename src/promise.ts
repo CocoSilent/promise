@@ -1,7 +1,7 @@
 import {Executor, OnFulfilled, OnRejected, PromiseState} from './type';
 
 // 异步任务，nodejs微任务  浏览器宏任务
-const asyncTask = (fun) => {
+const asyncTask = (fun: any) => {
     if (process && process.nextTick) {
         // microtask
         process.nextTick(fun)
@@ -16,8 +16,10 @@ export default class Promise {
     private PromiseResult: any;
     private readonly resolve: OnFulfilled
     private readonly reject: OnRejected;
+    private readonly onFulfilledCallbacks:OnFulfilled[]  = [];
+    private readonly onRejectedCallbacks:OnRejected[] = [];
     constructor(executor: Executor) {
-        this.PromiseState = null;
+        this.PromiseState = PromiseState.PENDING;
 
         this.resolve = function (value: any) {
             this.PromiseState = PromiseState.FULLFILLED;
@@ -38,11 +40,35 @@ export default class Promise {
     then(onFulfilled: OnFulfilled, onRejected:OnRejected) {
         const promise2 = new Promise((resolve, reject) => {
             if (this.PromiseState === PromiseState.FULLFILLED) {
-                onFulfilled(this.PromiseResult);
+                asyncTask(() => {
+                    try {
+                        const x = onFulfilled(this.PromiseResult);
+                        resolve(x);
+                    } catch (e) {
+                        reject(e);
+                    }
+                });
             } else if (this.PromiseState === PromiseState.REJECTED) {
-                onRejected(this.PromiseResult);
+                asyncTask(() => {
+                    try {
+                        const x = onRejected(this.PromiseResult);
+                        resolve(x);
+                    } catch (e) {
+                        reject(e);
+                    }
+                })
             } else if (this.PromiseState === PromiseState.PENDING) {
+                this.onFulfilledCallbacks.push((value) => {
+                    asyncTask(() => {
+                        onFulfilled(value);
+                    })
+                });
 
+                this.onRejectedCallbacks.push((reason) => {
+                    asyncTask(() => {
+                        onFulfilled(reason);
+                    })
+                })
             }
         });
         return promise2;
