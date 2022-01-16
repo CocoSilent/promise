@@ -22,13 +22,25 @@ export default class Promise {
         this.PromiseState = PromiseState.PENDING;
 
         this.resolve = function (value: any) {
-            this.PromiseState = PromiseState.FULLFILLED;
-            this.PromiseResult = value;
+            // 状态不能重复改变
+            if (this.PromiseState === PromiseState.PENDING) {
+                asyncTask(() => {
+                    this.PromiseState = PromiseState.FULLFILLED;
+                    this.PromiseResult = value;
+                    this.onFulfilledCallbacks.forEach(callback => callback(this.PromiseResult));
+                })
+            }
         }
 
         this.reject = function (reason: any) {
-            this.PromiseState = PromiseState.REJECTED;
-            this.PromiseResult = reason;
+            // 状态不能重复改变
+            if (this.PromiseState === PromiseState.PENDING) {
+                asyncTask(() => {
+                    this.PromiseState = PromiseState.REJECTED;
+                    this.PromiseResult = reason;
+                    this.onRejectedCallbacks.forEach(callback => callback(this.PromiseResult));
+                })
+            }
         }
 
         try {
