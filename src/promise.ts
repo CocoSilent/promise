@@ -2,12 +2,15 @@ import {Executor, OnFulfilled, OnRejected, PromiseState} from './type';
 
 // 异步任务，nodejs微任务  浏览器宏任务
 function asyncTask(fun: any) {
-    if (process && process.nextTick) {
+    if (typeof process !== 'undefined' && process.nextTick) {
         // microtask
-        process.nextTick(fun)
+        process.nextTick(fun);
+        // queueMicrotask(fun);
     } else {
         // macrotask
-        setTimeout(fun);
+        // setTimeout(fun);
+        // Microtask
+        queueMicrotask(fun);
     }
 }
 
