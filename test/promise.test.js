@@ -84,5 +84,19 @@ function abc() {
     })
 
     Promise.all([]).then(res => console.log('all2',res))
+
+
+    const promise11 = new Promise((resolve, reject) => {
+        setTimeout(resolve, 500, 'one');
+    });
+
+    const promise12 = new Promise((resolve, reject) => {
+        setTimeout(resolve, 499, 'two');
+    });
+
+    Promise.race([promise11, promise12]).then((value) => {
+        console.log(value);
+        // Both resolve, but promise2 is faster
+    });
 }
 abc();

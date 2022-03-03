@@ -203,6 +203,21 @@ export default class Promise {
             }
         });
     }
+
+    static race(promises: any) {
+        if (!promises || !promises[Symbol.iterator]) {
+            throw new TypeError('promises必须是可迭代对象');
+        }
+        return new Promise((resolve, reject) => {
+            for (const promise of promises) {
+                Promise.resolve(promise).then((value) => {
+                    resolve(value);
+                }, (reason) => {
+                    reject(reason);
+                });
+            }
+        });
+    }
  }
 
 
