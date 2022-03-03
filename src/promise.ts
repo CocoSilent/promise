@@ -183,16 +183,25 @@ export default class Promise {
         }
         const result: any[] = [];
         let count = 0;
+        let iteratorIndex = 0;
         return new Promise((resolve, reject) => {
+            let hasComplete = false;
             for (const promise of promises) {
+                const index = iteratorIndex;
+                iteratorIndex = iteratorIndex + 1;
                 Promise.resolve(promise).then((value) => {
                     count = count + 1;
-                    if (count === promises.length) {
+                    result[index] = value;
+                    if (hasComplete && count === iteratorIndex) {
                         resolve(result);
                     }
                 }, (reason) => {
                     reject(reason);
                 });
+            }
+            hasComplete = true;
+            if (iteratorIndex === 0) {
+                resolve(result);
             }
         });
     }
