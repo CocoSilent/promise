@@ -16,16 +16,16 @@ function asyncTask(fun: any) {
 
 function resolvePromise(promise2: Promise, x: any, resolve: OnFulfilled, reject: OnRejected) {
     if (promise2 === x) {
-        throw new TypeError('x不能等于promise2')
+        throw new TypeError('x不能等于promise2');
     } else if (x instanceof Promise) {
         if (x.PromiseState === PromiseState.PENDING) {
             x.then((y) => {
-                resolvePromise(promise2, y, resolve, reject)
-            }, reject)
+                resolvePromise(promise2, y, resolve, reject);
+            }, reject);
         } else {
             x.then(resolve, reject);
         }
-    } else if (x !== null && (typeof x === "object" || typeof x === 'function')) {
+    } else if (x !== null && (typeof x === 'object' || typeof x === 'function')) {
         let then;
         try {
             then = x.then;
@@ -39,18 +39,18 @@ function resolvePromise(promise2: Promise, x: any, resolve: OnFulfilled, reject:
                 then.call(x,
                     (y: any) => {
                         if (called) {
-                            return
+                            return;
                         }
                         called = true;
                         resolvePromise(promise2, y, resolve, reject);
                     },
                     (r: any) => {
                         if (called) {
-                            return
+                            return;
                         }
                         called = true;
                         reject(r);
-                    })
+                    });
             } catch (e) {
                 if (called) {
                     return;
@@ -67,9 +67,11 @@ function resolvePromise(promise2: Promise, x: any, resolve: OnFulfilled, reject:
 }
 
 export default class Promise {
+    // tslint:disable-next-line:variable-name
     PromiseState: PromiseState;
+    // tslint:disable-next-line:variable-name
     private PromiseResult: any;
-    private readonly resolve: OnFulfilled
+    private readonly resolve: OnFulfilled;
     private readonly reject: OnRejected;
     private readonly onFulfilledCallbacks: OnFulfilled[] = [];
     private readonly onRejectedCallbacks: OnRejected[] = [];
@@ -84,9 +86,9 @@ export default class Promise {
                     this.PromiseState = PromiseState.FULLFILLED;
                     this.PromiseResult = value;
                     this.onFulfilledCallbacks.forEach(callback => callback(this.PromiseResult));
-                })
+                });
             }
-        }
+        };
 
         this.reject = function (reason: any) {
             // 状态不能重复改变
@@ -95,9 +97,9 @@ export default class Promise {
                     this.PromiseState = PromiseState.REJECTED;
                     this.PromiseResult = reason;
                     this.onRejectedCallbacks.forEach(callback => callback(this.PromiseResult));
-                })
+                });
             }
-        }
+        };
 
         try {
             executor(this.resolve.bind(this), this.reject.bind(this));
@@ -112,7 +114,7 @@ export default class Promise {
         }
         if (typeof onRejected !== 'function') {
             onRejected = reason => {
-                throw reason
+                throw reason;
             };
         }
         const promise2 = new Promise((resolve, reject) => {
@@ -133,7 +135,7 @@ export default class Promise {
                     } catch (e) {
                         reject(e);
                     }
-                })
+                });
             } else if (this.PromiseState === PromiseState.PENDING) {
                 this.onFulfilledCallbacks.push((value) => {
                     asyncTask(() => {
@@ -143,7 +145,7 @@ export default class Promise {
                         } catch (e) {
                             reject(e);
                         }
-                    })
+                    });
                 });
 
                 this.onRejectedCallbacks.push((reason) => {
@@ -154,10 +156,14 @@ export default class Promise {
                         } catch (e) {
                             reject(e);
                         }
-                    })
-                })
+                    });
+                });
             }
         });
         return promise2;
+    }
+
+    static all(promises: []) {
+
     }
 }
