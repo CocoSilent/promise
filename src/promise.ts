@@ -108,11 +108,11 @@ export default class Promise {
         }
     }
 
-    then(onFulfilled: OnFulfilled, onRejected: OnRejected) {
+    then(onFulfilled: OnFulfilled, onRejected?: OnRejected) {
         if (typeof onFulfilled !== 'function') {
             onFulfilled = value => value;
         }
-        if (typeof onRejected !== 'function') {
+        if (!onRejected || typeof onRejected !== 'function') {
             onRejected = reason => {
                 throw reason;
             };
@@ -130,7 +130,7 @@ export default class Promise {
             } else if (this.PromiseState === PromiseState.REJECTED) {
                 asyncTask(() => {
                     try {
-                        const x = onRejected(this.PromiseResult);
+                        const x = (onRejected as OnRejected)(this.PromiseResult);
                         resolvePromise(promise2, x, resolve, reject);
                     } catch (e) {
                         reject(e);
@@ -151,7 +151,7 @@ export default class Promise {
                 this.onRejectedCallbacks.push((reason) => {
                     asyncTask(() => {
                         try {
-                            const x = onRejected(reason);
+                            const x = (onRejected as OnRejected)(reason);
                             resolvePromise(promise2, x, resolve, reject);
                         } catch (e) {
                             reject(e);
@@ -163,7 +163,39 @@ export default class Promise {
         return promise2;
     }
 
-    static all(promises: []) {
-
+    static resolve(value: any) {
+        return new Promise(resovle => {
+            resovle();
+        }).then(() => {
+            return value;
+        });
     }
-}
+
+    static reject(reason: any) {
+        return new Promise((resolve, reject) => {
+            reject(reason);
+        });
+    }
+
+    static all(promises: any) {
+        if (!promises || !promises[Symbol.iterator]) {
+            throw new TypeError('promises必须是可迭代对象');
+        }
+        const result: any[] = [];
+        let count = 0;
+        return new Promise((resolve, reject) => {
+            for (const promise of promises) {
+                Promise.resolve(promise).then((value) => {
+                    count = count + 1;
+                    if (count === promises.length) {
+                        resolve(result);
+                    }
+                }, (reason) => {
+                    reject(reason);
+                });
+            }
+        });
+    }
+ }
+
+
